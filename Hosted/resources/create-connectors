@@ -1,0 +1,3 @@
+curl -vX POST http://0.0.0.0:8083/connectors -d @bulk-user-info-request --header "Content-Type: application/json" && \
+curl -vX POST http://0.0.0.0:8083/connectors -d @classified-spam-request --header "Content-Type: application/json" && \
+curl -vX POST http://0.0.0.0:8083/connectors -d @url-agg-request --header "Content-Type: application/json"

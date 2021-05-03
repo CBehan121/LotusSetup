@@ -1,0 +1,173 @@
+version: '2'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - /zk-data:/var/lib/zookeeper/data
+      - /zk-txn-logs:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "19092:19092"
+    expose:
+      - "9092"
+    volumes:
+      - /kafka-data/kafka-data:/var/lib/kafka/data
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,CONNECTIONS_FROM_HOST://localhost:19092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONNECTIONS_FROM_HOST:PLAINTEXT
+
+  pheasant-feeder:
+    image: wintorb/pheasant-feeder:0.0.4
+    restart: unless-stopped
+    depends_on:
+      - kafka
+      - zookeeper
+    volumes:
+      - ./resources/config.edn:/~/app/pheasant-feeder/config.edn
+
+  classifiers:
+    image: wintorb/pylotus:0.0.1
+    restart: unless-stopped
+    depends_on:
+      - lotus
+
+  lotus:
+    image: wintorb/lotus:0.0.5
+    restart: unless-stopped
+    depends_on:
+      - kafka
+      - kafka-create-topics
+    volumes:
+      - ./resources/config.edn:/~/app/lotus/config.edn
+
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:5.3.0
+    mem_limit: '2g'
+    hostname: rest-proxy
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - 8082:8082
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka:9092'
+      KAFKA_REST_LISTENERS: "http://rest-proxy:8082"
+
+  kafka-create-topics:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-create-topics
+    depends_on:
+      - kafka
+    command: |
+      bash -c 'echo "Waiting for kafka to come alive" && \
+      sleep 120 && \
+      cub kafka-ready -b kafka:9092 1 20 && \
+      kafka-topics --create --topic url-input --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181 && \
+      kafka-topics --create --topic potential-spam --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181 && \
+      kafka-topics --create --topic tweet-input --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181 && \
+      kafka-topics --create --topic classified-spam --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181 && \
+      kafka-topics --create --topic spam-author-aggregation --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181 && \
+      kafka-topics --create --topic bulk-user-data --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181 && \
+      kafka-topics --create --topic url-aggregation --partitions 1 --replication-factor 1 --if-not-exists --zookeeper zookeeper:2181'
+
+
+  elasticsearch:
+    image: amazon/opendistro-for-elasticsearch:1.13.0
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms200m -Xmx200m"
+      - "opendistro_security.ssl.http.enabled=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "9200:9200"
+    volumes:
+      - /elasticsearch-data-volume:/usr/share/elasticsearch/data
+
+  kibana:
+    image: amazon/opendistro-for-elasticsearch-kibana:1.13.0
+    container_name: kibana
+    restart: always
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /usr/share/kibana/config/admin.pem
+      SERVER_SSL_KEY: /usr/share/kibana/config/admin-key.pem
+    volumes:
+      - ./kibana_mount:/mnt/kibana
+      - /root-ca/admin.pem:/usr/share/kibana/config/admin.pem
+      - /root-ca/admin-key.pem:/usr/share/kibana/config/admin-key.pem
+    ports:
+      - "5601:5601"
+    expose:
+      - "5601"
+    depends_on:
+      - elasticsearch
+
+  connect:
+    image: confluentinc/cp-kafka-connect:5.3.1
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    expose:
+      - "8083"
+    depends_on:
+      - zookeeper
+      - kafka
+    volumes:
+      - /connect-plugins:/connect-plugins
+      - /auto-connectors:/connectors
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "connect"
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-config
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_REPLICATION_FACTOR: 1
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "connect"
+      CONNECT_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONNECT_PLUGIN_PATH: '/usr/share/java'
+      CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
+      CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-3.3.0.jar
+    command: |
+        bash -c 'echo "intializing connectors" && \
+        sleep 130 && \
+        cd connectors && \
+        bash create-connectors'

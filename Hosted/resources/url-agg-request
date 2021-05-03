@@ -1,0 +1,15 @@
+{
+  "name": "url-agg",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "url-aggregation",
+    "schema.ignore": "true",
+    "key.ignore": "false",
+    "connection.username": "admin",
+    "connection.password": "con12",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "test-type",
+    "name":"url-agg"
+  }
+}

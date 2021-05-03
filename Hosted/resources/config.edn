@@ -1,0 +1,64 @@
+{:bearer "AAAAAAAAAAAAAAAAAAAAAJeNNwEAAAAAJ7EW2NuUOK%2BxQKjGgYnr0tw%2F8cA%3DA61TudpeMrj1Y4ChYiKBHlSkUXrfvWfbZmHsZHdn97R5vKoe56"
+ :batch-size-to-kafka 400
+ :topic-configs
+ {:filter-app-config {"application.id" "Filter-topic"
+                      "bootstrap.servers" "kafka:9092"
+                      "cache.max.bytes.buffering" "0"}
+  :URL-app-config {"application.id" "url-topology"
+                   "bootstrap.servers" "kafka:9092"
+                   "cache.max.bytes.buffering" "0"
+                   "default.key.serde" "jackdaw.serdes.EdnSerde"
+                   "default.value.serde" "jackdaw.serdes.EdnSerde"}
+  :spam-aggregation-app-config{"application.id" "spam-user-aggregation"
+                               "bootstrap.servers" "kafka:9092"
+                               "cache.max.bytes.buffering" "0"
+                               "default.key.serde" "jackdaw.serdes.EdnSerde"
+                               "default.value.serde" "jackdaw.serdes.EdnSerde"}}
+ :consumer-config {:topic-name "classified-spam"
+                   "group.id" "information-consumer"
+                   "bootstrap.servers" "kafka:9092"
+                   "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                   "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
+
+ :producer-config {:topic-name "bulk-user-data"
+                   "group.id" "bulk-information-producer"
+                   "bootstrap.servers" "kafka:9092"
+                   "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                   "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
+
+ :topic-metadata {"tweet-input"
+                  {:topic-name "tweet-input"
+                   :partition-count 1
+                   :replication-factor 1
+                   :key-serde {:serde-keyword :jackdaw.serdes.json/serde}
+                   :value-serde {:serde-keyword :jackdaw.serdes.json/serde}}
+                  "url-input"
+                  {:topic-name "url-input"
+                   :partition-count 1
+                   :replication-factor 1
+                   :key-serde {:serde-keyword :jackdaw.serdes.json/serde}
+                   :value-serde {:serde-keyword :jackdaw.serdes.json/serde}}
+                  "potential-spam"
+                  {:topic-name "potential-spam"
+                   :partition-count 1
+                   :replication-factor 1
+                   :key-serde {:serde-keyword :jackdaw.serdes.json/serde}
+                   :value-serde {:serde-keyword :jackdaw.serdes.json/serde}}
+                  "url-aggregation"
+                  {:topic-name "url-aggregation"
+                   :partition-count 1
+                   :replication-factor 1
+                   :key-serde {:serde-keyword :jackdaw.serdes.json/serde}
+                   :value-serde {:serde-keyword :jackdaw.serdes.json/serde}}
+                  "classified-spam"
+                  {:topic-name "classified-spam"
+                   :partition-count 1
+                   :replication-factor 1
+                   :key-serde {:serde-keyword :jackdaw.serdes.json/serde}
+                   :value-serde {:serde-keyword :jackdaw.serdes.json/serde}}
+                  "spam-author-aggregation"
+                  {:topic-name "spam-author-aggregation"
+                   :partition-count 1
+                   :replication-factor 1
+                   :key-serde {:serde-keyword :jackdaw.serdes.json/serde}
+                   :value-serde {:serde-keyword :jackdaw.serdes.json/serde}}}}
