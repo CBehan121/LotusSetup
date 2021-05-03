@@ -1,4 +1,4 @@
-{:bearer "AAAAAAAAAAAAAAAAAAAAAJeNNwEAAAAAJ7EW2NuUOK%2BxQKjGgYnr0tw%2F8cA%3DA61TudpeMrj1Y4ChYiKBHlSkUXrfvWfbZmHsZHdn97R5vKoe56"
+{:bearer "No a real bearer"
  :batch-size-to-kafka 400
  :topic-configs
  {:filter-app-config {"application.id" "Filter-topic"
