@@ -33,7 +33,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONNECTIONS_FROM_HOST:PLAINTEXT
 
   pheasant-feeder:
-    image: wintorb/pheasant-feeder:0.0.4
+    image: tester2
     restart: unless-stopped
     depends_on:
       - kafka
@@ -42,13 +42,13 @@ services:
       - ./resources/config.edn:/~/app/pheasant-feeder/config.edn
 
   classifiers:
-    image: wintorb/pylotus:0.0.1
+    image: tester3
     restart: unless-stopped
     depends_on:
       - lotus
 
   lotus:
-    image: wintorb/lotus:0.0.5
+    image: tester
     restart: unless-stopped
     depends_on:
       - kafka
@@ -115,13 +115,7 @@ services:
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       ELASTICSEARCH_URL: http://elasticsearch:9200
-      SERVER_SSL_ENABLED: "true"
-      SERVER_SSL_CERTIFICATE: /usr/share/kibana/config/admin.pem
-      SERVER_SSL_KEY: /usr/share/kibana/config/admin-key.pem
-    volumes:
-      - ./kibana_mount:/mnt/kibana
-      - /root-ca/admin.pem:/usr/share/kibana/config/admin.pem
-      - /root-ca/admin-key.pem:/usr/share/kibana/config/admin-key.pem
+      SERVER_SSL_ENABLED: "false"
     ports:
       - "5601:5601"
     expose:
@@ -141,7 +135,6 @@ services:
       - kafka
     volumes:
       - /connect-plugins:/connect-plugins
-      - /auto-connectors:/connectors
     environment:
       CONNECT_BOOTSTRAP_SERVERS: kafka:9092
       CONNECT_REST_PORT: 8083
@@ -166,8 +159,3 @@ services:
       CONNECT_LOG4J_ROOT_LOGLEVEL: INFO
       CONNECT_LOG4J_LOGGERS: org.reflections=ERROR
       CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-3.3.0.jar
-    command: |
-        bash -c 'echo "intializing connectors" && \
-        sleep 130 && \
-        cd connectors && \
-        bash create-connectors'
