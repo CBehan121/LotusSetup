@@ -6,8 +6,8 @@
     "topics": "classified-spam",
     "schema.ignore": "true",
     "key.ignore": "false",
-    "connection.username": "admin",
-    "connection.password": "con12",
+    "connection.username": "<Admin username>",
+    "connection.password": "<Admin password>",
     "connection.url": "http://elasticsearch:9200",
     "type.name": "test-type",
     "name":"classified-spam"

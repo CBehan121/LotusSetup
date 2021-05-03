@@ -1,15 +1,15 @@
 {
-  "name": "url-agg",
+  "name": "spam-user-aggregation",
   "config": {
     "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
     "tasks.max": "1",
-    "topics": "url-aggregation",
+    "topics": "spam-user-aggregation",
     "schema.ignore": "true",
     "key.ignore": "false",
     "connection.username": "<Admin username>",
     "connection.password": "<Admin password>",
     "connection.url": "http://elasticsearch:9200",
     "type.name": "test-type",
-    "name":"url-agg"
+    "name":"spam-user-aggregation"
   }
 }
