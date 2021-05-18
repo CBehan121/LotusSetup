@@ -33,7 +33,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONNECTIONS_FROM_HOST:PLAINTEXT
 
   pheasant-feeder:
-    image: wintorb/pheasant-feeder:0.0.4
+    image: wintorb/pheasant-feeder:0.0.7
     restart: unless-stopped
     depends_on:
       - kafka
@@ -42,13 +42,13 @@ services:
       - ./resources/config.edn:/~/app/pheasant-feeder/config.edn
 
   classifiers:
-    image: wintorb/pylotus:0.0.1
+    image: wintorb/pylotus:0.0.4
     restart: unless-stopped
     depends_on:
       - lotus
 
   lotus:
-    image: wintorb/lotus:0.0.5
+    image: wintorb/lotus:0.0.9
     restart: unless-stopped
     depends_on:
       - kafka
